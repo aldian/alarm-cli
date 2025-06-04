@@ -1,5 +1,8 @@
 playsound
-pygame
+pygame>=2.5.0
 pygobject==3.50.0
-python-dateutil
+python-dateutil>=2.8.2
 synthesizer
+numpy>=1.24.0
+soundfile>=0.12.1
+sounddevice>=0.4.6

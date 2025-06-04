@@ -5,6 +5,8 @@ import datetime
 import time
 import os
 import re
+import numpy as np
+import sounddevice as sd
 from dateutil import parser, tz
 import pygame
 
@@ -44,31 +46,57 @@ def parse_datetime(datetime_str):
     except ValueError as e:
         raise argparse.ArgumentTypeError(f"Invalid datetime format: {e}")
 
-def play_alarm(sound_file):
-    """Play the alarm sound repeatedly for 1 minute with increased volume."""
-    if not os.path.exists(sound_file):
-        print(f"Warning: {sound_file} not found. Please provide a valid sound file.")
-        return
+def generate_tone(duration=1.0, frequency=1000):
+    """Generate a simple sine wave tone."""
+    sample_rate = 44100  # Sample rate in Hz
     
+    # Generate the tone
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    tone = np.sin(frequency * t * 2 * np.pi)
+    
+    # Ensure that highest value is in 16-bit range
+    audio = tone * (2**15 - 1) / np.max(np.abs(tone))
+    # Convert to 16-bit data
+    audio = audio.astype(np.int16)
+    
+    return audio, sample_rate
+
+def play_alarm(sound_file=None):
+    """Play the alarm sound repeatedly for 1 minute with increased volume."""
     try:
-        # Initialize pygame mixer
-        pygame.mixer.init()
-        # Load the sound file
-        sound = pygame.mixer.Sound(sound_file)
-        # Set volume to maximum (1.0)
-        sound.set_volume(1.0)
-        
-        end_time = time.time() + 60  # Play for 1 minute
-        while time.time() < end_time:
-            sound.play()
-            # Wait for the sound to finish playing
-            pygame.time.wait(int(sound.get_length() * 1000))
-            # Add a small delay between plays to prevent overlapping
-            time.sleep(0.1)
+        if sound_file and os.path.exists(sound_file):
+            # Initialize pygame mixer
+            pygame.mixer.init()
+            # Load the sound file
+            sound = pygame.mixer.Sound(sound_file)
+            # Set volume to maximum (1.0)
+            sound.set_volume(1.0)
+            
+            end_time = time.time() + 60  # Play for 1 minute
+            while time.time() < end_time:
+                sound.play()
+                # Wait for the sound to finish playing
+                pygame.time.wait(int(sound.get_length() * 1000))
+                # Add a small delay between plays to prevent overlapping
+                time.sleep(0.1)
+        else:
+            # Generate and play a tone continuously
+            audio, sample_rate = generate_tone(duration=1.0)
+            # Play the tone continuously
+            sd.play(audio, sample_rate, loop=True)
+            # Keep the script running until interrupted
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                sd.stop()
     except Exception as e:
         print(f"Error playing sound: {e}")
     finally:
-        pygame.mixer.quit()
+        if sound_file:
+            pygame.mixer.quit()
+        else:
+            sd.stop()
 
 def main():
     parser = argparse.ArgumentParser(description='Set an alarm to wake you up.')
@@ -77,8 +105,8 @@ def main():
                            '- Absolute time: "2024-03-20 07:30" or "tomorrow 07:30"\n'
                            '- With timezone: "2024-03-20 07:30 EST" or "tomorrow 07:30 UTC"\n'
                            '- Relative time: "now + 10 seconds" or "now + 5 minutes"')
-    parser.add_argument('--sound', '-s', required=True,
-                      help='Path to the alarm sound file')
+    parser.add_argument('--sound', '-s',
+                      help='Path to the alarm sound file (optional, will use generated tone if not specified)')
     
     args = parser.parse_args()
     alarm_time = args.datetime
@@ -95,7 +123,10 @@ def main():
     local_alarm_time = alarm_time.astimezone(tz.tzlocal())
     
     print(f"Alarm set for: {local_alarm_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-    print(f"Using sound file: {args.sound}")
+    if args.sound:
+        print(f"Using sound file: {args.sound}")
+    else:
+        print("Using generated tone")
     
     # Countdown loop
     while time_until_alarm > 0:

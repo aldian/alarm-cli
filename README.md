@@ -12,16 +12,20 @@ A simple command-line alarm program that helps you wake up at a specified time.
 
 ## Usage
 
-Run the program with a date and time argument and a sound file:
+Run the program with a date and time argument:
 
 ```bash
+# Using a custom sound file (plays for 1 minute)
 python alarm.py "2024-03-20 07:30" --sound alarm.mp3
+
+# Using the default generated tone (plays continuously until interrupted)
+python alarm.py "2024-03-20 07:30"
 ```
 
 You can also use natural language time expressions:
 ```bash
 python alarm.py "tomorrow 07:30" --sound alarm.mp3
-python alarm.py "next monday 08:00" --sound alarm.mp3
+python alarm.py "next monday 08:00"  # Uses generated tone
 ```
 
 Or use the short form for the sound argument:
@@ -36,7 +40,7 @@ The program supports timezone-aware alarms. You can specify the timezone in seve
 ```bash
 # Using timezone abbreviations
 python alarm.py "2024-03-20 07:30 EST" --sound alarm.mp3
-python alarm.py "tomorrow 07:30 PST" --sound alarm.mp3
+python alarm.py "tomorrow 07:30 PST"  # Uses generated tone
 
 # Using UTC
 python alarm.py "2024-03-20 07:30 UTC" --sound alarm.mp3
@@ -51,13 +55,15 @@ If no timezone is specified, the program will use your local timezone.
 
 - Real-time countdown display with hours, minutes, and seconds
 - Support for various time formats and timezones
-- Customizable alarm sound
+- Optional custom alarm sound or built-in tone generator
+- Custom sound files play for 1 minute
+- Generated tone plays continuously until interrupted (Ctrl+C)
 - Maximum volume playback
-- Plays alarm sound for 1 minute when triggered
 
 ## Notes
 
+- If no sound file is specified, the program will use a generated 1000Hz tone that plays continuously
+- To stop the generated tone, press Ctrl+C
 - The sound file must be in a format supported by pygame (MP3, WAV, etc.)
 - The program will continue running until the alarm time is reached
-- You can stop the program at any time by pressing Ctrl+C
 - All times are converted to your local timezone for display 
