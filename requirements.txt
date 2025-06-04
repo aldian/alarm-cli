@@ -1,0 +1,5 @@
+playsound
+pygame
+pygobject==3.50.0
+python-dateutil
+synthesizer
