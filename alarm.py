@@ -82,21 +82,36 @@ def play_alarm(sound_file=None):
         else:
             # Generate and play a tone continuously
             audio, sample_rate = generate_tone(duration=1.0)
+            
+            # Configure sounddevice settings
+            sd.default.samplerate = sample_rate
+            sd.default.channels = 1
+            sd.default.dtype = np.int16
+            sd.default.blocksize = 2048  # Increased buffer size
+            sd.default.latency = 'high'  # Higher latency for better stability
+            
             # Play the tone continuously
-            sd.play(audio, sample_rate, loop=True)
+            stream = sd.OutputStream()
+            stream.start()
+            
             # Keep the script running until interrupted
             try:
                 while True:
-                    time.sleep(1)
+                    stream.write(audio)
             except KeyboardInterrupt:
-                sd.stop()
+                stream.stop()
+                stream.close()
     except Exception as e:
         print(f"Error playing sound: {e}")
     finally:
         if sound_file:
             pygame.mixer.quit()
         else:
-            sd.stop()
+            try:
+                stream.stop()
+                stream.close()
+            except:
+                pass
 
 def main():
     parser = argparse.ArgumentParser(description='Set an alarm to wake you up.')
